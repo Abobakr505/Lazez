@@ -1,0 +1,95 @@
+@import "@fancyapps/ui/dist/fancybox/fancybox.css";
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lalezar&display=swap');
+
+@font-face {
+
+    font-family: GraphicSchool-Regular;
+
+    src: url(/GraphicSchool-Regular.ttf);
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+font-family: "IBM Plex Sans Arabic", sans-serif;
+  scroll-behavior: smooth;
+}
+
+body {
+  direction: rtl;
+
+}
+
+@layer utilities {
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.nav-link {
+  position: relative;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nav-link::after {
+  content: "";
+  --tw-text-opacity: 1;
+  position: absolute;
+  width: 0;
+  height: 2.5px;
+  bottom: -3px; /* المسافة بين النص والخط */
+  left: 0; /* يبدأ من اليمين (مع RTL) */
+  background-color: #FFB400; /* استبدل بلون teeverse أو لون آخر */
+  transition: width 0.3s ease-in-out; /* أنيميشن سلس للعرض */
+  border-radius: 2px; /* حواف مستديرة للخط */
+}
+
+.nav-link:hover::after {
+  width: 100%; /* يمتد الخط ليغطي كامل عرض النص */
+  right: 0; /* ينتهي عند اليسار */
+  left: auto; /* إلغاء right لضمان الاتجاه الصحيح */
+}
+
+.Lalezar {
+  font-family: 'Lalezar', sans-serif;
+}
+
+.text-shadow-lg {
+    text-shadow: 0px 0px 8px #ffcc54;
+  }
+
+
+  .GraphicSchool{
+
+  font-family: 'GraphicSchool-Regular' , sans-serif;
+
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #B22222;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
