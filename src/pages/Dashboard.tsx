@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { MenuItem, Offer, Category } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify'; // استيراد react-toastify
+import { Upload } from 'lucide-react'; // استيراد أيقونة Upload
 
 export const Dashboard = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -55,6 +57,10 @@ export const Dashboard = () => {
       }
     } catch (err: any) {
       setError(err.message);
+      toast.error(`خطأ: ${err.message}`, {
+        position: 'top-right',
+        autoClose: 2000,
+      });
     } finally {
       setLoading(false);
     }
@@ -75,10 +81,18 @@ export const Dashboard = () => {
       .upload(filePath, file);
     
     if (error) {
+      toast.error(`فشل رفع الصورة: ${error.message}`, {
+        position: 'top-right',
+        autoClose: 2000,
+      });
       throw new Error('Image upload failed: ' + error.message);
     }
 
     const { data } = supabase.storage.from('images').getPublicUrl(filePath);
+    toast.success('تم رفع الصورة بنجاح!', {
+      position: 'top-right',
+      autoClose: 2000,
+    });
     return data.publicUrl;
   };
 
@@ -110,6 +124,10 @@ export const Dashboard = () => {
             })
             .eq('id', editingId);
           if (error) throw error;
+          toast.success(`تم تحديث ${formData.name} بنجاح!`, {
+            position: 'top-right',
+            autoClose: 2000,
+          });
         } else if (activeTab === 'offers') {
           const { error } = await supabase
             .from('offers')
@@ -122,6 +140,10 @@ export const Dashboard = () => {
             })
             .eq('id', editingId);
           if (error) throw error;
+          toast.success(`تم تحديث ${formData.title} بنجاح!`, {
+            position: 'top-right',
+            autoClose: 2000,
+          });
         } else if (activeTab === 'categories') {
           const { error } = await supabase
             .from('categories')
@@ -131,6 +153,10 @@ export const Dashboard = () => {
             })
             .eq('id', editingId);
           if (error) throw error;
+          toast.success(`تم تحديث ${formData.name} بنجاح!`, {
+            position: 'top-right',
+            autoClose: 2000,
+          });
         } else if (activeTab === 'news') {
           const { error } = await supabase
             .from('news')
@@ -141,6 +167,10 @@ export const Dashboard = () => {
             })
             .eq('id', editingId);
           if (error) throw error;
+          toast.success(`تم تحديث ${formData.title} بنجاح!`, {
+            position: 'top-right',
+            autoClose: 2000,
+          });
         }
       } else {
         // Add new item
@@ -154,6 +184,10 @@ export const Dashboard = () => {
             image: cleanedData.image || '',
           }]);
           if (error) throw error;
+          toast.success(`تم إضافة ${formData.name} إلى المنيو بنجاح!`, {
+            position: 'top-right',
+            autoClose: 2000,
+          });
         } else if (activeTab === 'offers') {
           const { error } = await supabase.from('offers').insert([{
             title: formData.title || '',
@@ -163,6 +197,10 @@ export const Dashboard = () => {
             image: cleanedData.image || '',
           }]);
           if (error) throw error;
+          toast.success(`تم إضافة ${formData.title} إلى العروض بنجاح!`, {
+            position: 'top-right',
+            autoClose: 2000,
+          });
         } else if (activeTab === 'categories') {
           const { error } = await supabase.from('categories').insert([{
             id: crypto.randomUUID(),
@@ -170,6 +208,10 @@ export const Dashboard = () => {
             icon: formData.icon || '',
           }]);
           if (error) throw error;
+          toast.success(`تم إضافة ${formData.name} إلى الفئات بنجاح!`, {
+            position: 'top-right',
+            autoClose: 2000,
+          });
         } else if (activeTab === 'news') {
           const { error } = await supabase.from('news').insert([{
             title: formData.title || '',
@@ -177,6 +219,10 @@ export const Dashboard = () => {
             image: cleanedData.image || '',
           }]);
           if (error) throw error;
+          toast.success(`تم إضافة ${formData.title} إلى الأخبار بنجاح!`, {
+            position: 'top-right',
+            autoClose: 2000,
+          });
         }
       }
 
@@ -186,6 +232,10 @@ export const Dashboard = () => {
       fetchData();
     } catch (err: any) {
       setError(err.message);
+      toast.error(`خطأ: ${err.message}`, {
+        position: 'top-right',
+        autoClose: 2000,
+      });
     } finally {
       setLoading(false);
     }
@@ -201,14 +251,23 @@ export const Dashboard = () => {
   const handleDelete = async (id: string) => {
     setError(null);
     try {
+      const tableName = activeTab === 'menu' ? 'menu_items' : activeTab;
       const { error } = await supabase
-        .from(activeTab)
+        .from(tableName)
         .delete()
         .eq('id', id);
       if (error) throw error;
+      toast.success('تم الحذف بنجاح!', {
+        position: 'top-right',
+        autoClose: 2000,
+      });
       fetchData();
     } catch (err: any) {
       setError(err.message);
+      toast.error(`خطأ: ${err.message}`, {
+        position: 'top-right',
+        autoClose: 2000,
+      });
     }
   };
 
@@ -251,17 +310,34 @@ export const Dashboard = () => {
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-lg mb-8">
           {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
           {loading ? (
-            <p className="text-center text-gray-500">جارٍ التحميل...</p>
-          ) : (
+
+          <div className="flex justify-center items-center flex-col gap-6 h-64">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              className="w-16 h-16 border-4 border-[#B22222] border-t-transparent rounded-full"
+            ></motion.div>
+            <p className="text-gray-700 text-lg">جاري تحميل المنتجات...</p>
+          </div>          ) : (
             <>
-              {/* 📸 Image Upload Input */}
+              {/* 📸 Improved Image Upload Input */}
               {(activeTab === 'menu' || activeTab === 'offers' || activeTab === 'news') && (
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                  className="p-3 rounded-lg border w-full mb-4"
-                />
+                <div className="mb-4">
+                  <label
+                    htmlFor="image-upload"
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-[#FFB400] text-[#8B0000] rounded-lg font-semibold cursor-pointer hover:bg-[#FFA500] transition-colors duration-200"
+                  >
+                    <Upload size={20} />
+                    {imageFile ? imageFile.name : 'اختر صورة'}
+                  </label>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </div>
               )}
 
               {activeTab === 'menu' && (

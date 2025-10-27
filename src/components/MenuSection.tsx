@@ -10,7 +10,7 @@ interface MenuSectionProps {
 }
 
 export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('beef');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -22,16 +22,27 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
       try {
         setIsLoading(true);
         setError(null);
-        const { data: menuData, error: menuError } = await supabase.from('menu_items').select('*');
+        
+        // Fetch categories first
         const { data: catData, error: catError } = await supabase.from('categories').select('*');
-
-        if (menuError || catError) {
-          throw new Error('فشل تحميل البيانات');
+        if (catError) throw new Error('فشل تحميل الفئات');
+        setCategories(catData || []);
+        
+        // Set initial category if not set
+        if (!selectedCategory && catData && catData.length > 0) {
+          setSelectedCategory(catData[0].id);
         }
 
+        // Fetch menu items for the selected category
+        const { data: menuData, error: menuError } = await supabase
+          .from('menu_items')
+          .select('*')
+          .eq('category', selectedCategory || (catData && catData[0]?.id));
+        
+        if (menuError) throw new Error('فشل تحميل المنتجات');
+        
         setMenuItems(menuData || []);
-        setCategories(catData || []);
-        toast.success('تم تحميل المنيو والفئات بنجاح!');
+        toast.success('تم تحميل المنيو بنجاح!');
       } catch (err) {
         setError('حدث خطأ أثناء تحميل البيانات.');
         toast.error('حدث خطأ أثناء تحميل البيانات.');
@@ -40,9 +51,12 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
       }
     };
     fetchData();
-  }, []);
+  }, [selectedCategory]); // Re-fetch when category changes
 
-  const filteredItems = menuItems.filter((item) => item.category === selectedCategory);
+  // إظهار جميع المنتجات إذا لم يتم اختيار فئة
+  const filteredItems = selectedCategory 
+    ? menuItems.filter(item => item.category === selectedCategory)
+    : menuItems;
 
   // تحسين الحركات للشبكة
   const container = {
@@ -62,7 +76,7 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
       opacity: 1,
       y: 0,
       transition: {
-        type: 'spring',
+        type: "spring" as const,
         stiffness: 100,
         damping: 20,
       },
@@ -123,21 +137,21 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
               transition={{ duration: 0.5 }}
               className="flex flex-wrap justify-center gap-3 mb-12"
             >
-              {categories.map((cat) => (
-                <motion.button
-                  key={cat.id}
-                  whileHover={{ scale: 1.05, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-6 py-2.5 rounded-full font-semibold text-base sm:text-lg transition-all duration-300  ${
-                    selectedCategory === cat.id
-                      ? 'bg-[#B22222] text-white shadow-md'
-                      : 'bg-white text-[#B22222] border border-[#B22222] hover:bg-gray-50'
-                  }`}
-                >
-                  {cat.icon} {cat.name}
-                </motion.button>
-              ))}
+  {categories.map((cat) => (
+    <motion.button
+      key={cat.id}
+      whileHover={{ scale: 1.05, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+      whileTap={{ scale: 0.95 }}
+      onClick={() => setSelectedCategory(cat.id)}
+      className={`px-6 py-2.5 rounded-full font-semibold text-base sm:text-lg transition-all duration-300 ${
+        selectedCategory === cat.id
+          ? 'bg-[#B22222] text-white shadow-md'
+          : 'bg-white text-[#B22222] border border-[#B22222] hover:bg-gray-50'
+      }`}
+    >
+      {cat.icon} {cat.name}
+    </motion.button>
+  ))}
             </motion.div>
 
             {filteredItems.length === 0 ? (
@@ -184,13 +198,13 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
 
                       <div className="flex items-center justify-between">
                         <div className="text-[#B22222] font-semibold ">
-                          {menuItem.price_double ? (
+                          {menuItem.priceDouble ? (
                             <>
-                              <div className="text-sm">سنجل: {menuItem.price_single} جنيه</div>
-                              <div className="text-sm">دبل: {menuItem.price_double} جنيه</div>
+                              <div className="text-sm">سنجل: {menuItem.priceSingle} جنيه</div>
+                              <div className="text-sm">دبل: {menuItem.priceDouble} جنيه</div>
                             </>
                           ) : (
-                            <div className="text-lg sm:text-xl">{menuItem.price_single} جنيه</div>
+                            <div className="text-lg sm:text-xl">{menuItem.priceSingle} جنيه</div>
                           )}
                         </div>
 
@@ -260,10 +274,10 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
                         }}
                         className="w-full bg-[#FFB400] text-[#8B0000] py-3 rounded-xl font-semibold text-lg sm:text-xl hover:bg-[#FFA500] transition-colors "
                       >
-                        سنجل - {selectedItem.price_single} جنيه
+                        سنجل - {selectedItem.priceSingle} جنيه
                       </motion.button>
 
-                      {selectedItem.price_double && (
+                      {selectedItem.priceDouble && (
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
@@ -273,7 +287,7 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
                           }}
                           className="w-full bg-[#B22222] text-white py-3 rounded-xl font-semibold text-lg sm:text-xl hover:bg-[#8B0000] transition-colors "
                         >
-                          دبل - {selectedItem.price_double} جنيه
+                          دبل - {selectedItem.priceDouble} جنيه
                         </motion.button>
                       )}
                     </div>

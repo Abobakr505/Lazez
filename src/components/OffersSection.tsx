@@ -100,8 +100,8 @@ export const OffersSection = () => {
 
         {isLoading ? (
           <div className="flex justify-center items-center flex-col gap-4 h-64">
-          <div className="w-12 h-12 border-4 border-[#B22222] border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-gray-700  text-lg">جاري تحميل المنتجات...</p>
+          <div className="w-12 h-12 border-4 border-[#FFB400] border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-white  text-lg">جاري تحميل المنتجات...</p>
 
           </div>
         ) : offers.length === 0 ? (
