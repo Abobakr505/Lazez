@@ -40,8 +40,16 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
           .eq('category', selectedCategory || (catData && catData[0]?.id));
         
         if (menuError) throw new Error('فشل تحميل المنتجات');
+
+        // Map snake_case DB fields to camelCase expected by components/types
+        const mappedMenu = (menuData || []).map((m: any) => ({
+          ...m,
+          // preserve existing camelCase if already present, otherwise map
+          priceSingle: m.price_single ?? m.priceSingle ?? 0,
+          priceDouble: m.price_double ?? m.priceDouble ?? undefined,
+        }));
         
-        setMenuItems(menuData || []);
+        setMenuItems(mappedMenu);
         toast.success('تم تحميل المنيو بنجاح!');
       } catch (err) {
         setError('حدث خطأ أثناء تحميل البيانات.');
