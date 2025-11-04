@@ -42,16 +42,30 @@ export const Footer = () => {
             </motion.a> */}
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-200">
-            <span>صُنع بـ</span>
+          <div className="flex items-center justify-center  gap-2 text-sm text-gray-200">
+
+            <span>© 2025 مطعم لذيذ. جميع الحقوق محفوظة</span>
+          </div>            
+          <div className="flex items-center justify-center gap-2 mt-2 text-sm text-gray-200">
+              <span>صُنع بـ</span>
             <motion.div
               animate={{ scale: [1, 1.4, 1], rotate: [0, 10, 0] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
             >
               <Heart size={18} fill="currentColor" className="text-[#FFB400]" />
             </motion.div>
-            <span>© 2025 مطعم لذيذ. جميع الحقوق محفوظة</span>
-          </div>
+            <span>من</span>
+          <span className="bracket text-[#FFB400] ">{"<"}</span>
+            <a
+              href="https://bakrhasan.netlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#FFB400] hover:underline"
+            >
+              أبوبكر حسن
+            </a>
+            <span className="bracket text-[#FFB400]">{">"}</span>
+            </div>
         </div>
       </div>
     </footer>

@@ -18,7 +18,7 @@ export const OffersSection = () => {
           return;
         }
         setOffers(data || []);
-        toast.success('تم تحميل العروض بنجاح!');
+        console.log('Fetched offers:', data);
       } catch (err) {
         toast.error('حدث خطأ أثناء تحميل العروض.');
       } finally {

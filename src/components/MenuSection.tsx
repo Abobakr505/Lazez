@@ -50,7 +50,7 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
         }));
         
         setMenuItems(mappedMenu);
-        toast.success('تم تحميل المنيو بنجاح!');
+        console.log('Fetched menu items:', mappedMenu);
       } catch (err) {
         setError('حدث خطأ أثناء تحميل البيانات.');
         toast.error('حدث خطأ أثناء تحميل البيانات.');
