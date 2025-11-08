@@ -99,7 +99,7 @@ export const AboutSection = () => {
             <motion.h3
               variants={textVariants}
               custom={0}
-              className="text-3xl font-bold text-[#B22222] tracking-wide"
+              className=" text-3xl font-bold text-[#B22222] tracking-wide"
             >
               قصة نجاح لذيذ
             </motion.h3>

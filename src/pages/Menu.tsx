@@ -143,7 +143,7 @@ export const Menu = () => {
           transition={{ duration: 0.6, ease: 'easeOut' }}
           className="text-center mb-16"
         >
-          <h2 className="text-5xl sm:text-6xl font-extrabold text-[#B22222] mb-4 tracking-tight">
+          <h2 className="GraphicSchool text-5xl sm:text-6xl font-extrabold text-[#B22222] mb-4 tracking-tight">
             المنيو الكامل
           </h2>
           <div className="w-32 h-1.5 bg-[#FFB400] mx-auto rounded-full"></div>

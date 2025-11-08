@@ -22,3 +22,10 @@ export interface Offer {
   endDate?: Date;
 }
 
+interface Message {
+  id: string;
+  name: string;
+  phone: string;
+  message: string;
+  created_at: string;
+}

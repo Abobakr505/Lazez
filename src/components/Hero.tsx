@@ -116,7 +116,7 @@ export const Hero = () => {
             className="text-4xl md:text-6xl font-bold text-[#FFB400] mb-12 drop-shadow-2xl"
           >
             إحنا اسمه{' '}
-            <span className="bg-gradient-to-br from-[#FFB400] to-[#FFCC54] text-transparent bg-clip-text Lalezar text-shadow-lg">
+            <span className="Lalezar bg-gradient-to-br from-[#FFB400] to-[#FFCC54] text-transparent bg-clip-text  text-shadow-lg">
               لــذيــذ
             </span>{' '}
             🍔🔥

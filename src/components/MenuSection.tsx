@@ -133,7 +133,7 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
           transition={{ duration: 0.6, ease: 'easeOut' }}
           className="text-center mb-16"
         >
-          <h2 className="text-5xl sm:text-6xl font-extrabold text-[#B22222] mb-4 ">
+          <h2 className="GraphicSchool text-5xl sm:text-6xl font-extrabold text-[#B22222] mb-4 ">
             المنيو
           </h2>
           <div className="w-24 h-1.5 bg-[#FFB400] mx-auto rounded-full"></div>

@@ -1,14 +1,12 @@
 import { motion } from 'framer-motion';
-import { useRef, useState } from 'react';
-import emailjs from 'emailjs-com';
+import { useState } from 'react';
 import Swal from 'sweetalert2';
-import { Phone, MapPin, Mail, Facebook, Instagram } from 'lucide-react';
+import { Phone, MapPin, Mail, Facebook, Instagram, Clock } from 'lucide-react';
+import { supabase } from '../lib/supabase'; // استيراد supabase
 
 export const ContactSection = () => {
-  const formRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ name: '', phone: '', message: '' });
-  const RECEIVER_EMAIL = 'abobakrhasan5335@email.com'; // ضع هنا الإيميل الذي تريد الإرسال له
   const contactInfo = [
     {
       icon: <Phone size={36} />,
@@ -23,10 +21,11 @@ export const ContactSection = () => {
       link: 'https://maps.app.goo.gl/oFAM71NNwyhoZp4q6',
     },
     {
-      icon: <Mail size={36} />,
-      title: 'البريد الإلكتروني',
-      content: 'info@lazeez.com',
-      link: 'mailto:info@lazeez.com',
+      icon: <Clock size={36} />,
+      title: ' مواعيد العمل',
+      content: 'من الساعه 1 ظهرا الي الساعه 2 صباحا',
+      dsc:' ما عدا يوم الجمعة من 3 ظهرا الي 2 صباحا',
+      link: 'https://www.facebook.com/share/p/1EmLmM5UET/',
     },
   ];
 
@@ -78,6 +77,7 @@ export const ContactSection = () => {
                     {info.title}
                   </h4>
                   <p className="text-gray-600 text-lg">{info.content}</p>
+                  <p className="text-gray-600 text-lg">{info.dsc}</p>
                 </div>
               </motion.a>
             ))}
@@ -122,35 +122,31 @@ export const ContactSection = () => {
             transition={{ duration: 0.8 }}
             className="bg-white p-10 rounded-2xl shadow-md"
           >
-            <h3 className="text-2xl font-bold text-[#B22222] mb-8 tracking-wide">
+            <h3 className=" text-2xl font-bold text-[#B22222] mb-8 tracking-wide">
               أرسل رسالة
             </h3>
-            <form ref={formRef} className="space-y-6" onSubmit={async (e) => {
+            <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
               setIsSubmitting(true);
-              // إضافة الإيميل المرسل إليه في بيانات النموذج
-              formRef.current.receiver_email.value = RECEIVER_EMAIL;
               try {
-                const result = await emailjs.sendForm(
-                  'service_1bdsc8t',
-                  'template_zvn7klm',
-                  formRef.current,
-                  'k9Ti1ib4trNRh4VAQ'
-                );
-                if (result.status === 200) {
-                  Swal.fire({
-                    title: 'تم الإرسال!',
-                    text: 'تم إرسال رسالتك بنجاح. سنتواصل معك قريباً!',
-                    icon: 'success',
-                    confirmButtonText: 'موافق',
-                    customClass: {
-                      popup: ' rounded-xl',
-                      title: 'text-xl font-bold text-green-700 ',
-                      confirmButton: 'bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg'
-                    }
-                  });
-                  setFormData({ name: '', phone: '', message: '' });
-                }
+                const { error } = await supabase.from('messages').insert([{
+                  name: formData.name,
+                  phone: formData.phone,
+                  message: formData.message,
+                }]);
+                if (error) throw error;
+                Swal.fire({
+                  title: 'تم الإرسال!',
+                  text: 'تم إرسال رسالتك بنجاح. سنتواصل معك قريباً!',
+                  icon: 'success',
+                  confirmButtonText: 'موافق',
+                  customClass: {
+                    popup: ' rounded-xl',
+                    title: 'text-xl font-bold text-green-700 ',
+                    confirmButton: 'bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg'
+                  }
+                });
+                setFormData({ name: '', phone: '', message: '' });
               } catch (error) {
                 Swal.fire({
                   title: 'خطأ!',
@@ -167,7 +163,6 @@ export const ContactSection = () => {
                 setIsSubmitting(false);
               }
             }}>
-              <input type="hidden" name="receiver_email" value="" />
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
                   الاسم

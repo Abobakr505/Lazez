@@ -1,24 +1,35 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MenuItem, Offer, Category } from '../types';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify'; // استيراد react-toastify
-import { Upload } from 'lucide-react'; // استيراد أيقونة Upload
+import { toast } from 'react-toastify';
+import { Upload, Edit, Trash2, ChevronDown } from 'lucide-react';
+
+// أضف نوع جديد للرسائل إذا لم يكن موجوداً في types.ts
+interface Message {
+  id: string;
+  name: string;
+  phone: string;
+  message: string;
+  created_at: string;
+}
 
 export const Dashboard = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [news, setNews] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]); // حالة جديدة للرسائل
   const [formData, setFormData] = useState<any>({});
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'menu' | 'offers' | 'news' | 'categories'>('menu');
+  const [activeTab, setActiveTab] = useState<'menu' | 'offers' | 'news' | 'categories' | 'messages'>('menu'); // أضف 'messages'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const navigate = useNavigate();
-
   // 🔐 Check authenticated user
   useEffect(() => {
     const checkUser = async () => {
@@ -32,7 +43,6 @@ export const Dashboard = () => {
     };
     checkUser();
   }, [navigate]);
-
   // 🌐 Always load categories (used in menu form) on mount so select has options
   useEffect(() => {
     const loadCategories = async () => {
@@ -47,7 +57,6 @@ export const Dashboard = () => {
     };
     loadCategories();
   }, []);
-
   // 📦 Fetch data based on active tab
   const fetchData = async () => {
     setLoading(true);
@@ -69,6 +78,10 @@ export const Dashboard = () => {
         const { data, error } = await supabase.from('news').select('*');
         if (error) throw error;
         setNews(data || []);
+      } else if (activeTab === 'messages') {
+        const { data, error } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        setMessages(data || []);
       }
     } catch (err: any) {
       setError(err.message);
@@ -80,21 +93,30 @@ export const Dashboard = () => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchData();
   }, [activeTab]);
-
+  // 📸 Handle image change and preview
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    } else {
+      setImagePreview(null);
+    }
+  };
   // 📸 Handle image upload
   const handleImageUpload = async (file: File) => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `public/${fileName}`;
-    
+   
     const { error } = await supabase.storage
       .from('images')
       .upload(filePath, file);
-    
+   
     if (error) {
       toast.error(`فشل رفع الصورة: ${error.message}`, {
         position: 'top-right',
@@ -102,7 +124,6 @@ export const Dashboard = () => {
       });
       throw new Error('Image upload failed: ' + error.message);
     }
-
     const { data } = supabase.storage.from('images').getPublicUrl(filePath);
     toast.success('تم رفع الصورة بنجاح!', {
       position: 'top-right',
@@ -110,20 +131,17 @@ export const Dashboard = () => {
     });
     return data.publicUrl;
   };
-
   // ➕ Add or Update item
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
       let cleanedData = { ...formData };
       // Handle image upload if present
       if (imageFile) {
         cleanedData.image = await handleImageUpload(imageFile);
       }
-
       if (editingId) {
         // Update existing item
         if (activeTab === 'menu') {
@@ -240,9 +258,9 @@ export const Dashboard = () => {
           });
         }
       }
-
       setFormData({});
       setImageFile(null);
+      setImagePreview(null);
       setEditingId(null);
       fetchData();
     } catch (err: any) {
@@ -255,18 +273,17 @@ export const Dashboard = () => {
       setLoading(false);
     }
   };
-
   // ✏️ Edit item
   const handleEdit = (item: any) => {
     setEditingId(item.id);
     setFormData({ ...item });
+    setImagePreview(item.image || null);
   };
-
   // 🗑️ Delete item
   const handleDelete = async (id: string) => {
     setError(null);
     try {
-      const tableName = activeTab === 'menu' ? 'menu_items' : activeTab;
+      const tableName = activeTab === 'menu' ? 'menu_items' : activeTab === 'messages' ? 'messages' : activeTab;
       const { error } = await supabase
         .from(tableName)
         .delete()
@@ -285,7 +302,6 @@ export const Dashboard = () => {
       });
     }
   };
-
   return (
     <section className="min-h-screen bg-[#F5F2E9] py-20">
       <div className="container mx-auto px-4">
@@ -297,7 +313,6 @@ export const Dashboard = () => {
           <h2 className="text-5xl font-extrabold text-[#B22222] mb-4">لوحة التحكم</h2>
           <div className="w-32 h-2 bg-[#FFB400] mx-auto rounded-full"></div>
         </motion.div>
-
         {/* 🔘 Tabs */}
         <div className="flex justify-center flex-wrap gap-4 mb-8">
           {[
@@ -305,6 +320,7 @@ export const Dashboard = () => {
             { key: 'offers', label: 'العروض' },
             { key: 'categories', label: 'الفئات' },
             { key: 'news', label: 'الأخبار' },
+            { key: 'messages', label: 'الرسائل' },
           ].map((tab) => (
             <motion.button
               key={tab.key}
@@ -320,265 +336,445 @@ export const Dashboard = () => {
             </motion.button>
           ))}
         </div>
-
         {/* 🧾 Form */}
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-lg mb-8">
-          {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
-          {loading ? (
-
-          <div className="flex justify-center items-center flex-col gap-6 h-64">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-              className="w-16 h-16 border-4 border-[#B22222] border-t-transparent rounded-full"
-            ></motion.div>
-            <p className="text-gray-700 text-lg">جاري تحميل المنتجات...</p>
-          </div>          ) : (
-            <>
-              {/* 📸 Improved Image Upload Input */}
-              {(activeTab === 'menu' || activeTab === 'offers' || activeTab === 'news') && (
-                <div className="mb-4">
-                  <label
-                    htmlFor="image-upload"
-                    className="flex items-center justify-center gap-2 px-6 py-3 bg-[#FFB400] text-[#8B0000] rounded-lg font-semibold cursor-pointer hover:bg-[#FFA500] transition-colors duration-200"
-                  >
-                    <Upload size={20} />
-                    {imageFile ? imageFile.name : 'اختر صورة'}
-                  </label>
-                  <input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                    className="hidden"
-                  />
-                </div>
-              )}
-
-              {activeTab === 'menu' && (
-                <>
-                  <input
-                    type="text"
-                    placeholder="اسم الصنف"
-                    value={formData.name || ''}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                  <select
-                    value={formData.category || ''}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="p-3 rounded-lg border w-full mb-4"
-                  >
-                    <option value="">اختر فئة</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    placeholder="سعر سنجل"
-                    value={formData.price_single || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price_single: e.target.value })
-                    }
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                  <input
-                    type="number"
-                    placeholder="سعر دبل (اختياري)"
-                    value={formData.price_double || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price_double: e.target.value })
-                    }
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                  <input
-                    type="text"
-                    placeholder="الوصف"
-                    value={formData.description || ''}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                </>
-              )}
-
-              {activeTab === 'offers' && (
-                <>
-                  <input
-                    type="text"
-                    placeholder="عنوان العرض"
-                    value={formData.title || ''}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                  <input
-                    type="text"
-                    placeholder="الوصف"
-                    value={formData.description || ''}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                  <input
-                    type="text"
-                    placeholder="الخصم"
-                    value={formData.discount || ''}
-                    onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                  <input
-                    type="datetime-local"
-                    value={formData.end_date || ''}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                </>
-              )}
-
-              {activeTab === 'categories' && (
-                <>
-                  <input
-                    type="text"
-                    placeholder="اسم الفئة"
-                    value={formData.name || ''}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                  <input
-                    type="text"
-                    placeholder="الأيقونة (اختياري)"
-                    value={formData.icon || ''}
-                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                </>
-              )}
-
-              {activeTab === 'news' && (
-                <>
-                  <input
-                    type="text"
-                    placeholder="عنوان الخبر"
-                    value={formData.title || ''}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                  <textarea
-                    placeholder="المحتوى"
-                    value={formData.content || ''}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    className="p-3 rounded-lg border w-full mb-4"
-                  />
-                </>
-              )}
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                type="submit"
-                className="w-full bg-[#B22222] text-white py-3 rounded-lg font-bold hover:bg-[#8B0000]"
+        {activeTab !== 'messages' && (
+          <motion.form
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            onSubmit={handleSubmit}
+            className="bg-white p-8 rounded-3xl shadow-2xl mb-12 border border-[#FFB400]/20"
+          >
+            {error && <p className="text-red-500 mb-4 text-center font-semibold">{error}</p>}
+            {loading ? (
+              <div className="flex justify-center items-center flex-col gap-6 h-64">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  className="w-16 h-16 border-4 border-[#B22222] border-t-transparent rounded-full"
+                ></motion.div>
+                <p className="text-gray-700 text-lg">جاري تحميل المنتجات...</p>
+              </div>
+            ) : (
+              <>
+                {/* 📸 Improved Image Upload Input with Preview */}
+                {(activeTab === 'menu' || activeTab === 'offers' || activeTab === 'news') && (
+                  <div className="mb-6">
+                    <label
+                      htmlFor="image-upload"
+                      className="flex items-center justify-center gap-2 px-6 py-4 bg-[#FFB400] text-[#8B0000] rounded-xl font-semibold cursor-pointer hover:bg-[#FFA500] transition-all duration-300 shadow-md"
+                    >
+                      <Upload size={24} />
+                      {imageFile ? imageFile.name : 'اختر صورة'}
+                    </label>
+                    <input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                    {imagePreview && (
+                      <motion.img
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        src={imagePreview}
+                        alt="معاينة الصورة"
+                        className="mt-4 w-full h-48 object-cover rounded-xl shadow-lg border border-[#B22222]/20"
+                      />
+                    )}
+                  </div>
+                )}
+                {activeTab === 'menu' && (
+                  <>
+                    <motion.input
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 }}
+                      type="text"
+                      placeholder="اسم الصنف"
+                      value={formData.name || ''}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                    <div className="relative mb-4">
+      <motion.button
+        type="button"
+        onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+        className="p-4 rounded-2xl border border-gray-200 w-full bg-white shadow-md 
+                   focus:outline-none focus:ring-2 focus:ring-[#FFB400] 
+                   flex justify-between items-center text-gray-800 font-semibold
+                   hover:shadow-lg transition-all"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.4 }}
+      >
+        <span>
+          {formData.category
+            ? categories.find(cat => cat.id === formData.category)?.name || 'اختر فئة'
+            : 'اختر فئة'}
+        </span>
+    
+        <motion.span
+          animate={{ rotate: isCategoryOpen ? 180 : 0 }}
+          transition={{ duration: 0.3 }}
+          className="text-gray-500"
+        >
+          <ChevronDown size={24} />
+        </motion.span>
+      </motion.button>
+    
+      <AnimatePresence>
+        {isCategoryOpen && (
+          <motion.ul
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            className="absolute left-0 right-0 bg-white border border-gray-200 
+                       rounded-2xl shadow-xl mt-2 z-20 max-h-64 overflow-auto backdrop-blur-sm"
+          >
+            {categories.map((cat) => (
+              <motion.li
+                key={cat.id}
+                whileHover={{
+                  scale: 1.01,
+                  backgroundColor: "#FFF4D1",
+                  color: "#8B0000",
+                }}
+                transition={{ duration: 0.15 }}
+                onClick={() => {
+                  setFormData({ ...formData, category: cat.id });
+                  setIsCategoryOpen(false);
+                }}
+                className="p-4 cursor-pointer text-gray-700 font-medium 
+                           border-b border-gray-100 last:border-none"
               >
-                {editingId ? 'تحديث' : 'إضافة'}
-              </motion.button>
-            </>
-          )}
-        </form>
-
+                {cat.name}
+              </motion.li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+    
+                    <motion.input
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 }}
+                      type="number"
+                      placeholder="سعر سنجل"
+                      value={formData.price_single || ''}
+                      onChange={(e) =>
+                        setFormData({ ...formData, price_single: e.target.value })
+                      }
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                    <motion.input
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 }}
+                      type="number"
+                      placeholder="سعر دبل (اختياري)"
+                      value={formData.price_double || ''}
+                      onChange={(e) =>
+                        setFormData({ ...formData, price_double: e.target.value })
+                      }
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                    <motion.input
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 }}
+                      type="text"
+                      placeholder="الوصف"
+                      value={formData.description || ''}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                  </>
+                )}
+                {activeTab === 'offers' && (
+                  <>
+                    <motion.input
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 }}
+                      type="text"
+                      placeholder="عنوان العرض"
+                      value={formData.title || ''}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                    <motion.input
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 }}
+                      type="text"
+                      placeholder="الوصف"
+                      value={formData.description || ''}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                    <motion.input
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 }}
+                      type="text"
+                      placeholder="الخصم"
+                      value={formData.discount || ''}
+                      onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                    <motion.input
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 }}
+                      type="datetime-local"
+                      value={formData.end_date || ''}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                  </>
+                )}
+                {activeTab === 'categories' && (
+                  <>
+                    <motion.input
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 }}
+                      type="text"
+                      placeholder="اسم الفئة"
+                      value={formData.name || ''}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                    <motion.input
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 }}
+                      type="text"
+                      placeholder="الأيقونة (اختياري)"
+                      value={formData.icon || ''}
+                      onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                  </>
+                )}
+                {activeTab === 'news' && (
+                  <>
+                    <motion.input
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 }}
+                      type="text"
+                      placeholder="عنوان الخبر"
+                      value={formData.title || ''}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                    <motion.textarea
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 }}
+                      placeholder="المحتوى"
+                      value={formData.content || ''}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                      className="p-4 rounded-xl border border-[#B22222]/20 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#FFB400] transition-all"
+                    />
+                  </>
+                )}
+                <motion.button
+                  whileHover={{ scale: 1.05, backgroundColor: '#8B0000' }}
+                  whileTap={{ scale: 0.95 }}
+                  type="submit"
+                  className="w-full bg-[#B22222] text-white py-4 rounded-xl font-bold hover:bg-[#8B0000] transition-all shadow-md"
+                >
+                  {editingId ? 'تحديث' : 'إضافة'}
+                </motion.button>
+              </>
+            )}
+          </motion.form>
+        )}
         {/* 🗂️ Data Display */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {activeTab === 'menu' &&
-            menuItems.map((item) => (
-              <div key={item.id} className="bg-white p-6 rounded-2xl shadow-lg">
-                <h3 className="text-xl font-bold text-[#B22222]">{item.name}</h3>
-                <p>{item.description}</p>
-                <p>سعر سنجل: {item.price_single} جنيه</p>
-                {item.price_double && <p>سعر دبل: {item.price_double} جنيه</p>}
-                {item.image && <img src={item.image} alt={item.name} className="w-full h-32 object-cover rounded-lg mt-4" />}
-                <div className="mt-4 flex gap-2">
-                  <button
+            menuItems.map((item, index) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
+                className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+              >
+                <h3 className="text-2xl font-bold text-[#B22222] mb-2">{item.name}</h3>
+                <p className="text-gray-600 mb-2">{item.description}</p>
+                <p className="font-semibold">سعر سنجل: {item.price_single} جنيه</p>
+                {item.price_double && <p className="font-semibold">سعر دبل: {item.price_double} جنيه</p>}
+                {item.image && (
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-40 object-cover rounded-xl mt-4 shadow-md"
+                  />
+                )}
+                <div className="mt-6 flex gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
                     onClick={() => handleEdit(item)}
-                    className="bg-[#FFB400] text-white py-2 px-4 rounded-lg hover:bg-[#eba400]"
+                    className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
                   >
+                    <Edit size={18} />
                     تعديل
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
                     onClick={() => handleDelete(item.id)}
-                    className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600"
+                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
                   >
+                    <Trash2 size={18} />
                     حذف
-                  </button>
+                  </motion.button>
                 </div>
-              </div>
+              </motion.div>
             ))}
-
           {activeTab === 'offers' &&
-            offers.map((offer) => (
-              <div key={offer.id} className="bg-white p-6 rounded-2xl shadow-lg">
-                <h3 className="text-xl font-bold text-[#B22222]">{offer.title}</h3>
-                <p>{offer.description}</p>
-                <p>الخصم: {offer.discount}</p>
-                {offer.image && <img src={offer.image} alt={offer.title} className="w-full h-32 object-cover rounded-lg mt-4" />}
-                <div className="mt-4 flex gap-2">
-                  <button
+            offers.map((offer, index) => (
+              <motion.div
+                key={offer.id}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
+                className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+              >
+                <h3 className="text-2xl font-bold text-[#B22222] mb-2">{offer.title}</h3>
+                <p className="text-gray-600 mb-2">{offer.description}</p>
+                <p className="font-semibold">الخصم: {offer.discount}</p>
+                {offer.image && (
+                  <img
+                    src={offer.image}
+                    alt={offer.title}
+                    className="w-full h-40 object-cover rounded-xl mt-4 shadow-md"
+                  />
+                )}
+                <div className="mt-6 flex gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
                     onClick={() => handleEdit(offer)}
-                    className="bg-[#FFB400] text-white py-2 px-4 rounded-lg hover:bg-[#eba400]"
+                    className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
                   >
+                    <Edit size={18} />
                     تعديل
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
                     onClick={() => handleDelete(offer.id)}
-                    className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600"
+                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
                   >
+                    <Trash2 size={18} />
                     حذف
-                  </button>
+                  </motion.button>
                 </div>
-              </div>
+              </motion.div>
             ))}
-
           {activeTab === 'categories' &&
-            categories.map((cat) => (
-              <div key={cat.id} className="bg-white p-6 rounded-2xl shadow-lg">
-                <h3 className="text-xl font-bold text-[#B22222]">{cat.name}</h3>
-                <p>الأيقونة: {cat.icon || '—'}</p>
-                <div className="mt-4 flex gap-2">
-                  <button
+            categories.map((cat, index) => (
+              <motion.div
+                key={cat.id}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
+                className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+              >
+                <h3 className="text-2xl font-bold text-[#B22222] mb-2">{cat.name}</h3>
+                <p className="text-gray-600">الأيقونة: {cat.icon || '—'}</p>
+                <div className="mt-6 flex gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
                     onClick={() => handleEdit(cat)}
-                    className="bg-[#FFB400] text-white py-2 px-4 rounded-lg hover:bg-[#eba400]"
+                    className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
                   >
+                    <Edit size={18} />
                     تعديل
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
                     onClick={() => handleDelete(cat.id)}
-                    className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600"
+                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
                   >
+                    <Trash2 size={18} />
                     حذف
-                  </button>
+                  </motion.button>
                 </div>
-              </div>
+              </motion.div>
             ))}
-
           {activeTab === 'news' &&
-            news.map((item) => (
-              <div key={item.id} className="bg-white p-6 rounded-2xl shadow-lg">
-                <h3 className="text-xl font-bold text-[#B22222]">{item.title}</h3>
-                <p>{item.content}</p>
-                {item.image && <img src={item.image} alt={item.title} className="w-full h-32 object-cover rounded-lg mt-4" />}
-                <div className="mt-4 flex gap-2">
-                  <button
+            news.map((item, index) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
+                className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+              >
+                <h3 className="text-2xl font-bold text-[#B22222] mb-2">{item.title}</h3>
+                <p className="text-gray-600 mb-2">{item.content}</p>
+                {item.image && (
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-40 object-cover rounded-xl mt-4 shadow-md"
+                  />
+                )}
+                <div className="mt-6 flex gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
                     onClick={() => handleEdit(item)}
-                    className="bg-[#FFB400] text-white py-2 px-4 rounded-lg hover:bg-[#eba400]"
+                    className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
                   >
+                    <Edit size={18} />
                     تعديل
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
                     onClick={() => handleDelete(item.id)}
-                    className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600"
+                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
                   >
+                    <Trash2 size={18} />
                     حذف
-                  </button>
+                  </motion.button>
                 </div>
-              </div>
+              </motion.div>
+            ))}
+            {activeTab === 'messages' &&
+            messages.map((msg, index) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
+                className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+              >
+                <h3 className="text-2xl font-bold text-[#B22222] mb-2">{msg.name}</h3>
+                <p className="text-gray-600 mb-2">رقم الهاتف: {msg.phone}</p>
+                <p className="text-gray-600 mb-2">الرسالة: {msg.message}</p>
+                <p className="text-gray-500 text-sm">التاريخ: {new Date(msg.created_at).toLocaleString('ar-EG')}</p>
+                <div className="mt-6 flex gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    onClick={() => handleDelete(msg.id)}
+                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={18} />
+                    حذف
+                  </motion.button>
+                </div>
+              </motion.div>
             ))}
         </div>
       </div>
