@@ -26,19 +26,38 @@ export const Menu = () => {
     [cart]
   );
 
+  // Fetch categories once on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCategories = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-        
-        // Fetch categories
         const { data: catData, error: catError } = await supabase.from('categories').select('*');
         if (catError) throw new Error('فشل تحميل الفئات');
         setCategories(catData || []);
-        
-        // Fetch all menu items (no category filter for full menu)
-        const { data: menuData, error: menuError } = await supabase.from('menu_items').select('*');
+      } catch (err) {
+        setError('حدث خطأ أثناء تحميل الفئات.');
+        toast.error('حدث خطأ أثناء تحميل الفئات.');
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Fetch menu items when selectedCategory changes ('' -> all)
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Build category filter if a category is selected
+        let query = supabase.from('menu_items').select('*');
+        if (selectedCategory !== '') {
+          // Try to coerce numeric ids where appropriate
+          const maybeNumber = Number(selectedCategory as any);
+          const categoryFilter = !Number.isNaN(maybeNumber) ? maybeNumber : selectedCategory;
+          query = query.eq('category', categoryFilter as any);
+        }
+
+        const { data: menuData, error: menuError } = await query;
         if (menuError) throw new Error('فشل تحميل المنتجات');
 
         // Map snake_case DB fields to camelCase
@@ -47,17 +66,18 @@ export const Menu = () => {
           priceSingle: m.price_single ?? m.priceSingle ?? 0,
           priceDouble: m.price_double ?? m.priceDouble ?? undefined,
         }));
-        
+
         setMenuItems(mappedMenu);
       } catch (err) {
-        setError('حدث خطأ أثناء تحميل البيانات.');
-        toast.error('حدث خطأ أثناء تحميل البيانات.');
+        setError('حدث خطأ أثناء تحميل المنتجات.');
+        toast.error('حدث خطأ أثناء تحميل المنتجات.');
       } finally {
         setIsLoading(false);
       }
     };
-    fetchData();
-  }, []); // Fetch once on mount
+
+    fetchMenuItems();
+  }, [selectedCategory]);
 
   // Filter items based on selected category (client-side for faster switching)
   const filteredItems = selectedCategory
