@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Headset, X, Menu, ClipboardList } from "lucide-react";
+import { Headset, X, Menu, ClipboardList , PhoneCall  } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa6";
 import { motion, AnimatePresence } from "framer-motion";
 import { Fancybox } from "@fancyapps/ui";
@@ -29,6 +29,8 @@ export function WhatsAppButton() {
   const phoneNumber = "+201093954137";
   const message = encodeURIComponent("مرحبا، أود الاستفسار عن خدماتكم.");
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+    const telephone = `tel:${phoneNumber}`;
+
 
   const iconVariants = {
     hidden: { opacity: 0, scale: 0.5, y: 10 },
@@ -53,6 +55,11 @@ export function WhatsAppButton() {
           {open && (
             <div className="flex flex-col items-center mb-4 space-y-4">
               {[
+                {
+                  Icon: PhoneCall ,
+                  label: " اتصل بنا",
+                  href: telephone,
+                },
                 {
                   Icon: FaWhatsapp,
                   label: "دردشة واتساب",

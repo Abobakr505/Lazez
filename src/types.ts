@@ -2,7 +2,7 @@ export interface MenuItem {
   id: string;
   name: string;
   description: string;
-  category: 'beef' | 'chicken' | 'sandwiches' | 'snacks' | 'meals';
+  category: string;
   image: string;
   priceDouble?: number;
   priceSingle: number;

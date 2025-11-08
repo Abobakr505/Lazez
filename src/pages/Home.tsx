@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Hero } from '../components/Hero';
 import { MenuSection } from '../components/MenuSection';
@@ -11,6 +12,19 @@ import { useCart } from '../hooks/useCart';
 import { WhatsAppButton } from '../components/WhatsAppButton';
 
 export const Home = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      const el = document.getElementById(id);
+      if (el) {
+        // small delay to ensure elements are mounted
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 50);
+      }
+    }
+  }, [location]);
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { cart, addToCart, updateQuantity, removeFromCart, getTotal, getWhatsAppMessage } = useCart();
 

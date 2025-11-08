@@ -33,6 +33,21 @@ export const Dashboard = () => {
     checkUser();
   }, [navigate]);
 
+  // 🌐 Always load categories (used in menu form) on mount so select has options
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const { data, error } = await supabase.from('categories').select('*');
+        if (error) throw error;
+        setCategories(data || []);
+      } catch (err: any) {
+        console.error('Failed to load categories:', err.message || err);
+        toast.error('فشل تحميل الفئات.', { position: 'top-right', autoClose: 2000 });
+      }
+    };
+    loadCategories();
+  }, []);
+
   // 📦 Fetch data based on active tab
   const fetchData = async () => {
     setLoading(true);

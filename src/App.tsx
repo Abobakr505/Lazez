@@ -6,6 +6,7 @@ import { supabase } from './lib/supabase';
 import { useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { Menu } from './pages/Menu';
 
 export const App = () => {
   useEffect(() => {
@@ -22,6 +23,7 @@ export const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/menu" element={<Menu />} />
           <Route path="/" element={<Home />} />
         </Routes>
       </Router>

@@ -1,7 +1,14 @@
 import { motion } from 'framer-motion';
+import { useRef, useState } from 'react';
+import emailjs from 'emailjs-com';
+import Swal from 'sweetalert2';
 import { Phone, MapPin, Mail, Facebook, Instagram } from 'lucide-react';
 
 export const ContactSection = () => {
+  const formRef = useRef(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({ name: '', phone: '', message: '' });
+  const RECEIVER_EMAIL = 'abobakrhasan5335@email.com'; // ضع هنا الإيميل الذي تريد الإرسال له
   const contactInfo = [
     {
       icon: <Phone size={36} />,
@@ -118,15 +125,61 @@ export const ContactSection = () => {
             <h3 className="text-2xl font-bold text-[#B22222] mb-8 tracking-wide">
               أرسل رسالة
             </h3>
-            <form className="space-y-6">
+            <form ref={formRef} className="space-y-6" onSubmit={async (e) => {
+              e.preventDefault();
+              setIsSubmitting(true);
+              // إضافة الإيميل المرسل إليه في بيانات النموذج
+              formRef.current.receiver_email.value = RECEIVER_EMAIL;
+              try {
+                const result = await emailjs.sendForm(
+                  'service_1bdsc8t',
+                  'template_zvn7klm',
+                  formRef.current,
+                  'k9Ti1ib4trNRh4VAQ'
+                );
+                if (result.status === 200) {
+                  Swal.fire({
+                    title: 'تم الإرسال!',
+                    text: 'تم إرسال رسالتك بنجاح. سنتواصل معك قريباً!',
+                    icon: 'success',
+                    confirmButtonText: 'موافق',
+                    customClass: {
+                      popup: 'bg-white/95 rounded-xl',
+                      title: 'text-xl font-bold text-green-700 ',
+                      confirmButton: 'bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg'
+                    }
+                  });
+                  setFormData({ name: '', phone: '', message: '' });
+                }
+              } catch (error) {
+                Swal.fire({
+                  title: 'خطأ!',
+                  text: 'حدث خطأ أثناء إرسال الرسالة. الرجاء المحاولة مرة أخرى.',
+                  icon: 'error',
+                  confirmButtonText: 'موافق',
+                  customClass: {
+                    popup: 'bg-white/95 rounded-xl',
+                    title: 'text-xl font-bold text-red-700',
+                    confirmButton: 'bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg'
+                  }
+                });
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}>
+              <input type="hidden" name="receiver_email" value="" />
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
                   الاسم
                 </label>
                 <input
                   type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#B22222] focus:ring-2 focus:ring-[#FFB400] focus:outline-none transition-all duration-300"
                   placeholder="أدخل اسمك"
+                  required
                 />
               </div>
               <div>
@@ -135,8 +188,12 @@ export const ContactSection = () => {
                 </label>
                 <input
                   type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#B22222] focus:ring-2 focus:ring-[#FFB400] focus:outline-none transition-all duration-300"
                   placeholder="أدخل رقم هاتفك"
+                  required
                 />
               </div>
               <div>
@@ -145,17 +202,22 @@ export const ContactSection = () => {
                 </label>
                 <textarea
                   rows={5}
+                  name="message"
+                  value={formData.message}
+                  onChange={e => setFormData({ ...formData, message: e.target.value })}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#B22222] focus:ring-2 focus:ring-[#FFB400] focus:outline-none transition-all duration-300 resize-none"
                   placeholder="اكتب رسالتك هنا"
+                  required
                 ></textarea>
               </div>
               <motion.button
                 whileHover={{ scale: 1.03, boxShadow: '0 5px 15px rgba(0, 0, 0, 0.2)' }}
                 whileTap={{ scale: 0.97 }}
                 type="submit"
-                className="w-full bg-gradient-to-r from-[#B22222] to-[#8B0000] text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all duration-300"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-[#B22222] to-[#8B0000] text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all duration-300 disabled:opacity-60"
               >
-                إرسال الرسالة
+                {isSubmitting ? 'جاري الإرسال...' : 'إرسال الرسالة'}
               </motion.button>
             </form>
           </motion.div>

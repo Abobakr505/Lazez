@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Menu, X, Home, Box, Phone, ClipboardList, Newspaper } from 'lucide-react';
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   cartItemsCount: number;
@@ -9,10 +10,22 @@ interface HeaderProps {
 
 export const Header = ({ cartItemsCount, onCartClick }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
-    element?.scrollIntoView({ behavior: 'smooth' });
+    const path = location.pathname;
+
+    // If we're already on the home page and the element exists, scroll to it
+    if (path === '/' && element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setMobileMenuOpen(false);
+      return;
+    }
+
+    // Otherwise navigate to home with hash so Home can handle scrolling
+    navigate(`/#${id}`);
     setMobileMenuOpen(false);
   };
 
