@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Menu } from './pages/Menu';
+import Error404 from './pages/Error404';
 
 export const App = () => {
   useEffect(() => {
@@ -21,6 +22,7 @@ export const App = () => {
     <>
       <Router>
         <Routes>
+          <Route path="*" element={<Error404 />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/menu" element={<Menu />} />
