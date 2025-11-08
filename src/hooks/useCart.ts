@@ -50,14 +50,23 @@ export const useCart = () => {
       return sum + price * item.quantity;
     }, 0);
   };
+const getWhatsAppMessage = () => {
+  const intro = "السلام عليكم 👋\nأريد عمل أوردر:\n\n-------------------------\n📦 تفاصيل الطلب:\n";
 
-  // Generate WhatsApp message
-  const getWhatsAppMessage = () => {
-    const message = cart
-      .map((item) => `${item.name} (${item.selectedSize === 'single' ? 'سنجل' : 'دبل'}) x${item.quantity}`)
-      .join('\n') + `\nالإجمالي: ${getTotal()} جنيه`;
-    return encodeURIComponent(message);
-  };
+  const itemsText = cart
+    .map(
+      (item) =>
+        `• ${item.name} (${item.selectedSize === "single" ? "سنجل" : "دبل"}) × ${item.quantity}`
+    )
+    .join("\n");
+
+  const totalText = `\n-------------------------\n💰 الإجمالي: ${getTotal()} جنيه\n\n✅ من فضلك تأكيد الطلب.`;
+
+  const message = `${intro}${itemsText}${totalText}`;
+
+  return encodeURIComponent(message);
+};
+
 
   return {
     cart,
