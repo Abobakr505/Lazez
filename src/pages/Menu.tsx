@@ -281,7 +281,7 @@ export const Menu = () => {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
                 onClick={() => setSelectedItem(null)}
-                className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 sm:p-6"
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
               >
                 <motion.div
                   layoutId={selectedItem.id}

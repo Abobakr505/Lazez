@@ -144,7 +144,7 @@ export const ContactSection = () => {
                     icon: 'success',
                     confirmButtonText: 'موافق',
                     customClass: {
-                      popup: 'bg-white/95 rounded-xl',
+                      popup: ' rounded-xl',
                       title: 'text-xl font-bold text-green-700 ',
                       confirmButton: 'bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg'
                     }
