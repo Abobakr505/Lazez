@@ -6,14 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Upload, Edit, Trash2, ChevronDown } from 'lucide-react';
 
-// أضف نوع جديد للرسائل إذا لم يكن موجوداً في types.ts
-interface Message {
-  id: string;
-  name: string;
-  phone: string;
-  message: string;
-  created_at: string;
-}
 
 export const Dashboard = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -29,6 +21,7 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const navigate = useNavigate();
   // 🔐 Check authenticated user
   useEffect(() => {
@@ -302,6 +295,18 @@ export const Dashboard = () => {
       });
     }
   };
+
+  // تجميع عناصر المنيو حسب الفئات
+  const groupedMenuItems = menuItems.reduce((acc: { [key: string]: MenuItem[] }, item) => {
+    const categoryId = item.category || 'uncategorized';
+    const categoryName = categories.find(cat => cat.id === categoryId)?.name || 'غير مصنف';
+    if (!acc[categoryName]) {
+      acc[categoryName] = [];
+    }
+    acc[categoryName].push(item);
+    return acc;
+  }, {});
+
   return (
     <section className="min-h-screen bg-[#F5F2E9] py-20">
       <div className="container mx-auto px-4">
@@ -463,7 +468,7 @@ export const Dashboard = () => {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.3 }}
                       type="number"
-                      placeholder="سعر سنجل"
+                      placeholder="سعر سنجل او السعر الاساسي  "
                       value={formData.price_single || ''}
                       onChange={(e) =>
                         setFormData({ ...formData, price_single: e.target.value })
@@ -597,185 +602,313 @@ export const Dashboard = () => {
           </motion.form>
         )}
         {/* 🗂️ Data Display */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {activeTab === 'menu' &&
-            menuItems.map((item, index) => (
+        <div className="space-y-12">
+          {activeTab === 'menu' && (
+            <>
               <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
-                className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="flex flex-wrap justify-center gap-3 mb-12"
               >
-                <h3 className="text-2xl font-bold text-[#B22222] mb-2">{item.name}</h3>
-                <p className="text-gray-600 mb-2">{item.description}</p>
-                <p className="font-semibold">سعر سنجل: {item.price_single} جنيه</p>
-                {item.price_double && <p className="font-semibold">سعر دبل: {item.price_double} جنيه</p>}
-                {item.image && (
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-40 object-cover rounded-xl mt-4 shadow-md"
-                  />
-                )}
-                <div className="mt-6 flex gap-3">
+                <motion.button
+                  key="all"
+                  whileHover={{ scale: 1.05, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSelectedCategory(null)}
+                  className={`px-6 py-2.5 rounded-full font-semibold text-base sm:text-lg transition-all duration-300 ${
+                    selectedCategory === null
+                      ? 'bg-[#B22222] text-white shadow-md'
+                      : 'bg-white text-[#B22222] border border-[#B22222] hover:bg-gray-50'
+                  }`}
+                >
+                  الكل
+                </motion.button>
+                {categories.map((cat) => (
                   <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => handleEdit(item)}
-                    className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
+                    key={cat.id}
+                    whileHover={{ scale: 1.05, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`px-6 py-2.5 rounded-full font-semibold text-base sm:text-lg transition-all duration-300 ${
+                      selectedCategory === cat.id
+                        ? 'bg-[#B22222] text-white shadow-md'
+                        : 'bg-white text-[#B22222] border border-[#B22222] hover:bg-gray-50'
+                    }`}
                   >
-                    <Edit size={18} />
-                    تعديل
+                    {cat.icon} {cat.name}
                   </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => handleDelete(item.id)}
-                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
-                  >
-                    <Trash2 size={18} />
-                    حذف
-                  </motion.button>
-                </div>
+                ))}
               </motion.div>
-            ))}
+              {selectedCategory === null ? (
+                Object.entries(groupedMenuItems).map(([categoryName, items], catIndex) => (
+                  <div key={categoryName}>
+                    <motion.h2
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: catIndex * 0.2 }}
+                      className="text-3xl font-bold text-[#B22222] mb-6 text-center"
+                    >
+                      {categoryName}
+                    </motion.h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {items.map((item, index) => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, y: 50 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: (catIndex * 0.2) + (index * 0.1) }}
+                          whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
+                          className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+                        >
+                          <h3 className="text-2xl font-bold text-[#B22222] mb-2">{item.name}</h3>
+                          <p className="text-gray-600 mb-2">{item.description}</p>
+                          <p className="font-semibold">سعر سنجل: {item.price_single} جنيه</p>
+                          {item.price_double && <p className="font-semibold">سعر دبل: {item.price_double} جنيه</p>}
+                          {item.image && (
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-full h-40 object-cover rounded-xl mt-4 shadow-md"
+                            />
+                          )}
+                          <div className="mt-6 flex gap-3">
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              onClick={() => handleEdit(item)}
+                              className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
+                            >
+                              <Edit size={18} />
+                              تعديل
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              onClick={() => handleDelete(item.id)}
+                              className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
+                            >
+                              <Trash2 size={18} />
+                              حذف
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div>
+                  {(() => {
+                    const categoryName = categories.find(cat => cat.id === selectedCategory)?.name || 'غير معروف';
+                    const filteredItems = menuItems.filter(item => item.category === selectedCategory);
+                    return (
+                      <>
+                        <motion.h2
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 }}
+                          className="text-3xl font-bold text-[#B22222] mb-6 text-center"
+                        >
+                          {categoryName}
+                        </motion.h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                          {filteredItems.map((item, index) => (
+                            <motion.div
+                              key={item.id}
+                              initial={{ opacity: 0, y: 50 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
+                              className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+                            >
+                              <h3 className="text-2xl font-bold text-[#B22222] mb-2">{item.name}</h3>
+                              <p className="text-gray-600 mb-2">{item.description}</p>
+                              <p className="font-semibold">سعر سنجل او الاساسي : {item.price_single} جنيه </p>
+                              {item.price_double && <p className="font-semibold">سعر دبل: {item.price_double} جنيه</p>}
+                              {item.image && (
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="w-full h-40 object-cover rounded-xl mt-4 shadow-md"
+                                />
+                              )}
+                              <div className="mt-6 flex gap-3">
+                                <motion.button
+                                  whileHover={{ scale: 1.1 }}
+                                  onClick={() => handleEdit(item)}
+                                  className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
+                                >
+                                  <Edit size={18} />
+                                  تعديل
+                                </motion.button>
+                                <motion.button
+                                  whileHover={{ scale: 1.1 }}
+                                  onClick={() => handleDelete(item.id)}
+                                  className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
+                                >
+                                  <Trash2 size={18} />
+                                  حذف
+                                </motion.button>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </>
+          )}
           {activeTab === 'offers' &&
-            offers.map((offer, index) => (
-              <motion.div
-                key={offer.id}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
-                className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
-              >
-                <h3 className="text-2xl font-bold text-[#B22222] mb-2">{offer.title}</h3>
-                <p className="text-gray-600 mb-2">{offer.description}</p>
-                <p className="font-semibold">الخصم: {offer.discount}</p>
-                {offer.image && (
-                  <img
-                    src={offer.image}
-                    alt={offer.title}
-                    className="w-full h-40 object-cover rounded-xl mt-4 shadow-md"
-                  />
-                )}
-                <div className="mt-6 flex gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => handleEdit(offer)}
-                    className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
-                  >
-                    <Edit size={18} />
-                    تعديل
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => handleDelete(offer.id)}
-                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
-                  >
-                    <Trash2 size={18} />
-                    حذف
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {offers.map((offer, index) => (
+                <motion.div
+                  key={offer.id}
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
+                  className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+                >
+                  <h3 className="text-2xl font-bold text-[#B22222] mb-2">{offer.title}</h3>
+                  <p className="text-gray-600 mb-2">{offer.description}</p>
+                  <p className="font-semibold">الخصم: {offer.discount}</p>
+                  {offer.image && (
+                    <img
+                      src={offer.image}
+                      alt={offer.title}
+                      className="w-full h-40 object-cover rounded-xl mt-4 shadow-md"
+                    />
+                  )}
+                  <div className="mt-6 flex gap-3">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      onClick={() => handleEdit(offer)}
+                      className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
+                    >
+                      <Edit size={18} />
+                      تعديل
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      onClick={() => handleDelete(offer.id)}
+                      className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={18} />
+                      حذف
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          }
           {activeTab === 'categories' &&
-            categories.map((cat, index) => (
-              <motion.div
-                key={cat.id}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
-                className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
-              >
-                <h3 className="text-2xl font-bold text-[#B22222] mb-2">{cat.name}</h3>
-                <p className="text-gray-600">الأيقونة: {cat.icon || '—'}</p>
-                <div className="mt-6 flex gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => handleEdit(cat)}
-                    className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
-                  >
-                    <Edit size={18} />
-                    تعديل
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => handleDelete(cat.id)}
-                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
-                  >
-                    <Trash2 size={18} />
-                    حذف
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {categories.map((cat, index) => (
+                <motion.div
+                  key={cat.id}
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
+                  className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+                >
+                  <h3 className="text-2xl font-bold text-[#B22222] mb-2">{cat.name}</h3>
+                  <p className="text-gray-600">الأيقونة: {cat.icon || '—'}</p>
+                  <div className="mt-6 flex gap-3">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      onClick={() => handleEdit(cat)}
+                      className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
+                    >
+                      <Edit size={18} />
+                      تعديل
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      onClick={() => handleDelete(cat.id)}
+                      className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={18} />
+                      حذف
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          }
           {activeTab === 'news' &&
-            news.map((item, index) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
-                className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
-              >
-                <h3 className="text-2xl font-bold text-[#B22222] mb-2">{item.title}</h3>
-                <p className="text-gray-600 mb-2">{item.content}</p>
-                {item.image && (
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-40 object-cover rounded-xl mt-4 shadow-md"
-                  />
-                )}
-                <div className="mt-6 flex gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => handleEdit(item)}
-                    className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
-                  >
-                    <Edit size={18} />
-                    تعديل
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => handleDelete(item.id)}
-                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
-                  >
-                    <Trash2 size={18} />
-                    حذف
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))}
-            {activeTab === 'messages' &&
-            messages.map((msg, index) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
-                className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
-              >
-                <h3 className="text-2xl font-bold text-[#B22222] mb-2">{msg.name}</h3>
-                <p className="text-gray-600 mb-2">رقم الهاتف: {msg.phone}</p>
-                <p className="text-gray-600 mb-2">الرسالة: {msg.message}</p>
-                <p className="text-gray-500 text-sm">التاريخ: {new Date(msg.created_at).toLocaleString('ar-EG')}</p>
-                <div className="mt-6 flex gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => handleDelete(msg.id)}
-                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
-                  >
-                    <Trash2 size={18} />
-                    حذف
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {news.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
+                  className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+                >
+                  <h3 className="text-2xl font-bold text-[#B22222] mb-2">{item.title}</h3>
+                  <p className="text-gray-600 mb-2">{item.content}</p>
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="w-full h-40 object-cover rounded-xl mt-4 shadow-md"
+                    />
+                  )}
+                  <div className="mt-6 flex gap-3">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      onClick={() => handleEdit(item)}
+                      className="flex-1 bg-[#FFB400] text-white py-2 px-4 rounded-xl hover:bg-[#eba400] font-semibold flex items-center justify-center gap-2"
+                    >
+                      <Edit size={18} />
+                      تعديل
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      onClick={() => handleDelete(item.id)}
+                      className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={18} />
+                      حذف
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          }
+          {activeTab === 'messages' &&
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {messages.map((msg, index) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.03, shadow: '0 20px 30px rgba(0,0,0,0.1)' }}
+                  className="bg-white p-6 rounded-3xl shadow-xl border border-[#FFB400]/10 overflow-hidden"
+                >
+                  <h3 className="text-2xl font-bold text-[#B22222] mb-2">{msg.name}</h3>
+                  <p className="text-gray-600 mb-2">رقم الهاتف: {msg.phone}</p>
+                  <p className="text-gray-600 mb-2">الرسالة: {msg.message}</p>
+                  <p className="text-gray-500 text-sm">التاريخ: {new Date(msg.created_at).toLocaleString('ar-EG')}</p>
+                  <div className="mt-6 flex gap-3">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      onClick={() => handleDelete(msg.id)}
+                      className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 font-semibold flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={18} />
+                      حذف
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          }
         </div>
       </div>
     </section>

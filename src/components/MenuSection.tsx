@@ -222,15 +222,27 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
 
                       <div className="flex items-center justify-between mt-2">
                         <div className="text-[#B22222] font-bold text-lg sm:text-xl flex flex-col gap-1">
-                          {menuItem.priceDouble ? (
-                            <>
-                              <span className="bg-[#FFF7E6] px-2 py-1 rounded text-sm shadow">سنجل: <span className="font-extrabold">{menuItem.priceSingle}</span> جنيه</span>
-                              <span className="bg-[#FFF7E6] px-2 py-1 rounded text-sm shadow">دبل: <span className="font-extrabold">{menuItem.priceDouble}</span> جنيه</span>
-                            </>
-                          ) : (
-                            <span className="bg-[#FFF7E6] px-2 py-1 rounded text-lg shadow">{menuItem.priceSingle} جنيه</span>
-                          )}
-                        </div>
+  {['beef', 'chicken'].includes(menuItem.category) ? (
+    // لو الفئة بيف أو تشيكن → سنجل ودبل
+    <>
+      <span className="bg-[#FFF7E6] px-2 py-1 rounded text-sm shadow">
+        سنجل: <span className="font-extrabold">{menuItem.priceSingle}</span> جنيه
+      </span>
+
+      {menuItem.priceDouble && (
+        <span className="bg-[#FFF7E6] px-2 py-1 rounded text-sm shadow">
+          دبل: <span className="font-extrabold">{menuItem.priceDouble}</span> جنيه
+        </span>
+      )}
+    </>
+  ) : (
+    // باقي الفئات → كلمة سعر فقط
+    <span className="bg-[#FFF7E6] px-2 py-1 rounded text-sm shadow">
+      السعر: <span className="font-extrabold">{menuItem.priceSingle}</span> جنيه
+    </span>
+  )}
+</div>
+
 
                         <motion.button
                           whileHover={{ scale: 1.15, rotate: 10 }}
@@ -290,32 +302,52 @@ export const MenuSection = ({ onAddToCart }: MenuSectionProps) => {
                     </p>
 
                     <div className="space-y-3">
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          handleAddToCart(selectedItem, 'single');
-                          setSelectedItem(null);
-                        }}
-                        className="w-full bg-[#FFB400] text-[#8B0000] py-3 rounded-xl font-semibold text-lg sm:text-xl hover:bg-[#FFA500] transition-colors "
-                      >
-                        سنجل - {selectedItem.priceSingle} جنيه
-                      </motion.button>
+  {['beef', 'chicken'].includes(selectedItem.category) ? (
+    <>
+      {/* سنجل */}
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => {
+          handleAddToCart(selectedItem, 'single');
+          setSelectedItem(null);
+        }}
+        className="w-full bg-[#FFB400] text-[#8B0000] py-3 rounded-xl font-semibold text-lg sm:text-xl hover:bg-[#FFA500] transition-colors"
+      >
+        سنجل - {selectedItem.priceSingle} جنيه
+      </motion.button>
 
-                      {selectedItem.priceDouble && (
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => {
-                            handleAddToCart(selectedItem, 'double');
-                            setSelectedItem(null);
-                          }}
-                          className="w-full bg-[#B22222] text-white py-3 rounded-xl font-semibold text-lg sm:text-xl hover:bg-[#8B0000] transition-colors "
-                        >
-                          دبل - {selectedItem.priceDouble} جنيه
-                        </motion.button>
-                      )}
-                    </div>
+      {/* دبل */}
+      {selectedItem.priceDouble && (
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            handleAddToCart(selectedItem, 'double');
+            setSelectedItem(null);
+          }}
+          className="w-full bg-[#B22222] text-white py-3 rounded-xl font-semibold text-lg sm:text-xl hover:bg-[#8B0000] transition-colors"
+        >
+          دبل - {selectedItem.priceDouble} جنيه
+        </motion.button>
+      )}
+    </>
+  ) : (
+    // باقي الفئات → زر واحد للسعر فقط
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => {
+        handleAddToCart(selectedItem, 'single');
+        setSelectedItem(null);
+      }}
+      className="w-full bg-[#FFB400] text-[#8B0000] py-3 rounded-xl font-semibold text-lg sm:text-xl hover:bg-[#FFA500] transition-colors"
+    >
+      السعر - {selectedItem.priceSingle} جنيه
+    </motion.button>
+  )}
+</div>
+
                   </div>
                 </motion.div>
               </motion.div>

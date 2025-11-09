@@ -26,8 +26,8 @@ const initializeFancybox = () => {
 
 export function WhatsAppButton() {
   const [open, setOpen] = useState(false);
-  const phoneNumber = "+201093954137";
-  const message = encodeURIComponent("مرحبا، أود الاستفسار عن خدماتكم.");
+  const phoneNumber = "201023142309";
+  const message = encodeURIComponent("مرحبا، اريد عمل اوردر من لذيذ ");
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
     const telephone = `tel:${phoneNumber}`;
 
