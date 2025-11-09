@@ -76,7 +76,7 @@ export const ContactSection = () => {
                   <h4 className="text-xl font-bold text-[#B22222] mb-1 tracking-wide">
                     {info.title}
                   </h4>
-                  <p className="text-gray-600 text-lg">{info.content}</p>
+                  <p className="text-gray-700 text-lg">{info.content}</p>
                   <p className="text-gray-600 text-lg">{info.dsc}</p>
                 </div>
               </motion.a>

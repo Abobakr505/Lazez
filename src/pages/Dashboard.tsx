@@ -432,7 +432,7 @@ export const Dashboard = () => {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
             className="absolute left-0 right-0 bg-white border border-gray-200 
-                       rounded-2xl shadow-xl mt-2 z-20 max-h-64 overflow-auto backdrop-blur-sm"
+                       rounded-2xl shadow-xl mt-2 z-20 max-h-64 overflow-auto overflow-x-hidden backdrop-blur-sm"
           >
             {categories.map((cat) => (
               <motion.li
