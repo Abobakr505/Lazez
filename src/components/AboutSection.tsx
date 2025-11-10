@@ -81,7 +81,7 @@ export const AboutSection = () => {
             <div className="relative group">
               <motion.img
                 whileHover={{ scale: 1.05, filter: 'brightness(1.1)' }}
-                src="/about.jpg"
+                src="/about.png"
                 alt="مطعم لذيذ"
                 className="rounded-2xl shadow-2xl w-full object-cover h-[400px]"
               />
