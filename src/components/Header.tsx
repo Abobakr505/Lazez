@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Menu, X, Home, Box, Phone, ClipboardList, Newspaper } from 'lucide-react';
+import { ShoppingCart, Menu, X, Home, BadgeInfo, Phone, ClipboardList, Newspaper } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -61,7 +61,7 @@ export const Header = ({ cartItemsCount, onCartClick }: HeaderProps) => {
     { name: 'الرئيسية', id: 'hero', icon: <Home size={18} /> },
     { name: 'المنيو', id: 'menu', icon: <ClipboardList  size={18} /> },
     { name: 'العروض', id: 'offers', icon: <Newspaper  size={18} /> },
-    { name: 'من نحن', id: 'about', icon: <Home size={18} /> },
+    { name: 'من نحن', id: 'about', icon: <BadgeInfo size={18} /> },
     { name: 'تواصل معنا', id: 'contact', icon: <Phone size={18} /> },
   ];
 
