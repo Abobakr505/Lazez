@@ -57,12 +57,12 @@ export const Footer = () => {
             <span>من</span>
           <span className="bracket text-[#FFB400] ">{"<"}</span>
             <a
-              href="https://bakrhasan.netlify.app/"
+              href="https://yasuruha.netlify.app/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#FFB400] hover:underline"
             >
-              أبوبكر حسن
+             يسِّرها 
             </a>
             <span className="bracket text-[#FFB400]">{">"}</span>
             </div>
